@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import { Spin } from 'antd';
 import { connect } from 'react-redux';
 import * as actions from '../store/actions/auth';
@@ -8,6 +9,25 @@ class Sidepanel extends React.Component {
 
     state = { 
         loginForm: true,
+        chats: []
+    }
+
+    componentWillReceiveProps(newProps) {
+        if (newProps.token != null && newProps.username != null) {
+            this.getUserChats(newProps.token, newProps.username);
+        }
+    }
+
+    getUserChats = (token, username) => {
+        axios.defaults.headers = {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`
+        }
+        axios.get(`http://127.0.0.1:8000/chat/?username=${username}`)
+        .then(res => {
+            console.log(res.data)
+            this.setState({ chats: res.data })
+        })
     }
 
     changeForm = () => {
@@ -122,7 +142,9 @@ class Sidepanel extends React.Component {
 const mapStateToProps = state => {
     return {
         isAuthenticated: state.token !== null,
-        loading: state.loading
+        loading: state.loading,
+        token: state.token,
+        username: state.username 
     }
 }
 
