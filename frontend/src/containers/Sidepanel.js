@@ -52,6 +52,17 @@ class Sidepanel extends React.Component {
     }
 
     render() {
+        const activeChats = this.state.chats.map(c => {
+            return (
+                <Contact 
+                    key={c.id} 
+                    name="Jatin Kinra"
+                    status="online"
+                    picURL="http://emilcarlsson.se/assets/louislitt.png"
+                    chatURL={`/${c.id}`} 
+                />
+            )
+        })
         return (
             <div id="sidepanel">
             <div id="profile">
@@ -116,7 +127,8 @@ class Sidepanel extends React.Component {
             </div>
             <div id="contacts">
                 <ul>
-                    <Contact 
+                    {activeChats}
+                    {/* <Contact 
                         name="Jatin Kinra"
                         status="online"
                         picURL="http://emilcarlsson.se/assets/louislitt.png"
@@ -127,7 +139,7 @@ class Sidepanel extends React.Component {
                         status="busy"
                         picURL="http://emilcarlsson.se/assets/harveyspecter.png"
                         chatURL="/palak" 
-                    />
+                    /> */}
                 </ul>
             </div>
             <div id="bottom-bar">
