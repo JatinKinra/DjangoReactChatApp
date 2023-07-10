@@ -1,25 +1,44 @@
-import React from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import WebSocketInstance from "../websocket";
 import Hoc from "../hoc/hoc";
 import { connect } from 'react-redux';
+import { useParams } from "react-router";
 
-class Chat extends React.Component {
+function Chat(props) {
 
-    constructor(props) {
-        super(props);
-        this.state = {message:'', messages:[]}
+    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const messageEl = useRef(null);
 
-        this.waitForSocketConnection(() => {
-            WebSocketInstance.addCallbacks(
-                this.setMessages.bind(this),
-                this.addMessage.bind(this)
-            );
-            WebSocketInstance.fetchMessages(this.props.currentUser);
-        })
-    }
+    useEffect(() => {
+        console.log('empty USEEFECT');
+        messageEl?.current?.scrollIntoView({ behavior: 'smooth' });
+    });
 
-    waitForSocketConnection(callback) {
-        const component = this;
+    let { chatID } = useParams();
+    console.log(messages, "messages")
+	const initialiseChat = () => {
+        waitForSocketConnection(() => {
+          WebSocketInstance.addCallbacks(populateMessages, addMessage)
+          WebSocketInstance.fetchMessages(
+            props.username, 
+            chatID
+          );
+        });
+
+		WebSocketInstance.connect(chatID);
+	}
+
+    useEffect(() => {
+        console.log("username/chatid USEEFECT");
+        initialiseChat();
+
+        return(() => {
+            WebSocketInstance.disconnect();
+        });
+    }, [props.username, chatID])
+
+    const waitForSocketConnection = (callback) => {
         setTimeout(
             function() {
                 if (WebSocketInstance.state() === 1) {
@@ -29,40 +48,52 @@ class Chat extends React.Component {
                 }
                 else {
                     console.log('wait for connection..');
-                    component.waitForSocketConnection(callback);
+                    waitForSocketConnection(callback);
                 }
         }, 100);
     }
 
-    addMessage(message) {
-        this.setState({
-            messages: [...this.state.messages, message]
-        })
+    const addMessage = (m) => {
+        console.log(messages, "messages in addmessage")
+
+        setMessages(prevMessages => [...prevMessages, m]);
     }
 
-    setMessages(messages) {
-        this.setState({ messages: messages.reverse() })
+    // const addMessage = useCallback((m) => {
+    //     console.log(messages, "messages in addmessage")
+
+    //     setMessages([...messages, m])
+    // }, [ props.chatId, messages])
+
+    
+    // const populateMessages = useCallback((ml) => {
+    //     console.log(messages, "messages in populate")
+
+    //     setMessages(ml.reverse())
+    // }, [ props.chatId, messages])
+
+    const populateMessages = (ml) => {
+        console.log(messages, "messages in populate")
+
+        setMessages(ml.reverse())
     }
 
-    sendMessageHandler = event => {
+    const sendMessageHandler = event => {
         event.preventDefault();
-        const message = {
-            from: 'jatin',
-            content: this.state.message
+        const m = {
+            from: props.username,
+            content: message,
+            chatId: chatID
         }
-        WebSocketInstance.newChatMessage(message);
-        this.setState({
-            message: ''
-        });
+        WebSocketInstance.newChatMessage(m);
+        setMessage('');
     }
 
-    messageChangeHandler = event => {
-        this.setState({
-            message: event.target.value
-        });
+    const messageChangeHandler = event => {
+        setMessage(event.target.value);
     }
 
-    renderTimestamp = timestamp => {
+    const renderTimestamp = timestamp => {
         let prefix = ''; 
         const timeDiff = Math.round((new Date().getTime() - new Date(timestamp).getTime())/60000);
         if (timeDiff < 1) { // less than one minute ago
@@ -77,73 +108,57 @@ class Chat extends React.Component {
         return prefix
     }
 
-    renderMessages = (messages) => {
-        const currentUser = this.props.username;
-        return messages.map((message, i, arr) => (
+    const renderMessages = (list) => {
+        console.log('chatjs mein aaya');
+        const currentUser = props.username;
+        return list.map((m, i, arr) => (
             <li 
-                key={message.id} 
+                key={m.id} 
                 style={{marginBottom: arr.length - 1 === i ? '300px' : '15px'}}
-                className={message.author === currentUser ? 'sent' : 'replies'}>
+                className={m.author === currentUser ? 'sent' : 'replies'}>
                 <img src="http://emilcarlsson.se/assets/mikeross.png" />
                 <p>
-                    {message.content}
+                    {m.content}
                     <br />
                     <small>
-                        {this.renderTimestamp(message.timestamp)}
+                        {renderTimestamp(m.timestamp)}
                     </small>
                 </p>
             </li>
         ))
     }
-
-    scrollToBottom = () => {
-        this.messagesEnd.scrollIntoView({ behavior: "smooth" });
-    }
-
-    componentDidMount() {
-        this.scrollToBottom();
-    }
-
-    componentDidUpdate() {
-        this.scrollToBottom();
-    }
-
-    render() {
-        const messages = this.state.messages;
-        return (
-            <Hoc>
-                <div className="messages">
-                    <ul id="chat-log">
-                        {
-                            messages &&
-                            this.renderMessages(messages)
-                        }
-                        <div style={{ float:"left", clear: "both" }}
-                            ref={(el) => { this.messagesEnd = el; }}>
-                        </div>
-                    </ul>
-                </div>
-                <div className="message-input">
-                    <form onSubmit={this.sendMessageHandler}>
-                        <div className="wrap">
-                            <input 
-                                onChange={this.messageChangeHandler}
-                                value={this.state.message}
-                                id="chat-message-input" 
-                                type="text" 
-                                placeholder="Write your message..." 
-                            />
-                            <i className="fa fa-paperclip attachment" aria-hidden="true"></i>
-                            <button id="chat-message-submit" className="submit">
-                                <i className="fa fa-paper-plane" aria-hidden="true"></i>
-                            </button>
-                        </div> 
-                    </form>
-                </div>
-            </Hoc>
-        )
-    }
-}
+    
+    return (
+        props.username && 
+        <Hoc>
+            <div className="messages" ref={messageEl}>
+                <ul id="chat-log">
+                    {
+                        messages &&
+                        renderMessages(messages)
+                    }
+                </ul>
+            </div>
+            <div className="message-input">
+                <form onSubmit={sendMessageHandler}>
+                    <div className="wrap">
+                        <input 
+                            onChange={messageChangeHandler}
+                            value={message}
+                            id="chat-message-input" 
+                            type="text" 
+                            placeholder="Write your message..." 
+                        />
+                        <i className="fa fa-paperclip attachment" aria-hidden="true"></i>
+                        <button id="chat-message-submit" className="submit">
+                            <i className="fa fa-paper-plane" aria-hidden="true"></i>
+                        </button>
+                    </div> 
+                </form>
+            </div>
+        </Hoc>
+    );
+};
 
 const mapStateToProps = state => {
     return {

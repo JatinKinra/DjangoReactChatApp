@@ -1,30 +1,32 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import * as actions from './store/actions/auth';
 import BaseRouter from './routes';
 import Sidepanel from './containers/Sidepanel';
 import Profile from './containers/Profile';
-import WebSocketInstance from './websocket';
+import Chat from './containers/Chat';
+import Hoc from './hoc/hoc';
 
 class App extends React.Component {
 
     componentDidMount() {
         this.props.onTryAutoSignup();
-        WebSocketInstance.connect();
     }
 
     render() {
         return(
-            <Router>
+            <BrowserRouter>
                 <div id="frame">
                     <Sidepanel />
                     <div className="content">
                         <Profile />
-                        <BaseRouter />
+                        <Routes>
+                            <Route path="/:chatID" exact element={<Chat />} />
+                        </Routes>                      
                     </div>
                 </div>
-            </Router>
+            </BrowserRouter>
         );
     };
 }

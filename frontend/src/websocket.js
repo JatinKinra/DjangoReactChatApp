@@ -16,16 +16,15 @@ class WebSocketService {
         this.socketRef = null;
     }
 
-    connect() {
-        const path = "ws://127.0.0.1:8000/ws/chat/test/";
+    connect(chatId) {
+        const path = `ws://127.0.0.1:8000/ws/chat/${chatId}/`;
+        console.log('connecting socket to - ', path);
         this.socketRef = new WebSocket(path);
         this.socketRef.onopen = () => {
             console.log('websocket open');
         }
 
-        this.socketNewMessage(JSON.stringify({
-            command: 'fetch_messages'
-        }))
+        //this.socketNewMessage(JSON.stringify({ command: 'fetch_messages' }));
         this.socketRef.onmessage = e => {
             this.socketNewMessage(e.data);
         }
@@ -36,6 +35,11 @@ class WebSocketService {
             console.log('websocket closed');
             this.connect();
         }
+    }
+
+    disconnect() {
+        console.log('Disconnecting socket');
+        this.socketRef.close();
     }
 
     socketNewMessage(data) {
@@ -52,12 +56,12 @@ class WebSocketService {
         }
     }
 
-    fetchMessages(username) {
-        this.sendMessage({ command: 'fetch_messages', username: username });
+    fetchMessages(username, chatId) {
+        this.sendMessage({ command: 'fetch_messages', username: username, chatId: chatId });
     }
 
     newChatMessage(message) {
-        this.sendMessage({ command: 'new_message', from: message.from, message: message.content });
+        this.sendMessage({ command: 'new_message', from: message.from, message: message.content, chatId: message.chatId });
     }
 
     addCallbacks(messagesCallback, newMessageCallback) {
@@ -66,8 +70,9 @@ class WebSocketService {
     }
 
     sendMessage(data) {
+        const json = JSON.stringify({ ...data })
         try {
-            this.socketRef.send(JSON.stringify({ ...data }))
+            this.socketRef.send(json)
         } catch (err) {
             console.log(err);
         }

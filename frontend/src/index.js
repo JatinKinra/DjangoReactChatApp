@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import { createStore, compose, applyMiddleware } from 'redux';
 import { Provider } from 'react-redux';
 import thunk from 'redux-thunk';
@@ -25,10 +25,9 @@ function configureStore() {
 
 const store = configureStore();
 
-const app = (
-    <Provider store={store}>
+const root = ReactDOM.createRoot(document.getElementById("app"));
+root.render(
+  <Provider store={store}>
         <App />
-    </Provider>
-)
-
-ReactDOM.render(app, document.getElementById("app"));
+  </Provider>
+);
