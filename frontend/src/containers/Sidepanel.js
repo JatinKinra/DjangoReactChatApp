@@ -2,38 +2,42 @@ import React from 'react';
 import axios from 'axios';
 import { Spin } from 'antd';
 import { connect } from 'react-redux';
-import * as actions from '../store/actions/auth';
-import Contact from './Components/Contact';
+import * as authActions from '../store/actions/auth';
+import * as navActions from '../store/actions/nav';
+import * as messageActions from '../store/actions/messages';
+import Contact from '../Components/Contact';
 
 class Sidepanel extends React.Component {
 
     state = { 
-        loginForm: true,
-        chats: []
+        loginForm: true
+    }
+
+    waitForAuthDetails() {
+        const component = this;
+        setTimeout(function() {
+            if (
+            component.props.token !== null &&
+            component.props.token !== undefined
+            ) {
+            component.props.getUserChats(
+                component.props.username,
+                component.props.token
+            );
+            return;
+            } else {
+            console.log("waiting for authentication details...");
+            component.waitForAuthDetails();
+            }
+        }, 100);
     }
 
     componentDidMount() {
-        if (this.props.token != null && this.props.username != null) {
-            this.getUserChats(this.props.token, this.props.username);
-        }
+        this.waitForAuthDetails();
     }
 
-    componentWillReceiveProps(newProps) {
-        if (newProps.token != null && newProps.username != null) {
-            this.getUserChats(newProps.token, newProps.username);
-        }
-    }
-
-    getUserChats = (token, username) => {
-        axios.defaults.headers = {
-            "Content-Type": "application/json",
-            Authorization: `Token ${token}`
-        }
-        axios.get(`http://127.0.0.1:8000/chat/?username=${username}`)
-        .then(res => {
-            console.log(res.data)
-            this.setState({ chats: res.data })
-        })
+    openAddChatPopup() {
+        this.props.addChat();
     }
 
     changeForm = () => {
@@ -57,14 +61,20 @@ class Sidepanel extends React.Component {
         }
     }
 
+    renderParticipant = (participants) => {
+        let person = 'none'; 
+        person = participants[1];
+        return person
+    }
+
     render() {
-        const activeChats = this.state.chats.map(c => {
+        const activeChats = this.props.chats.map(c => {
             return (
                 <Contact 
                     key={c.id} 
-                    name="Jatin Kinra"
+                    name={this.renderParticipant(c.participants)}
                     status="online"
-                    picURL="http://emilcarlsson.se/assets/louislitt.png"
+                    picURL="http://emilcarlsson.se/assets/harveyspecter.png"
                     chatURL={`/${c.id}`} 
                 />
             )
@@ -74,7 +84,7 @@ class Sidepanel extends React.Component {
             <div id="profile">
                 <div className="wrap">
                 <img id="profile-img" src="http://emilcarlsson.se/assets/mikeross.png" className="online" alt="" />
-                <p>Mike Ross</p>
+                <p>{this.props.username === null ? 'Login' : this.props.username}</p>
                 <i className="fa fa-chevron-down expand-button" aria-hidden="true"></i>
                 <div id="status-options">
                     <ul>
@@ -149,7 +159,10 @@ class Sidepanel extends React.Component {
                 </ul>
             </div>
             <div id="bottom-bar">
-                <button id="addcontact"><i className="fa fa-user-plus fa-fw" aria-hidden="true"></i> <span>Add contact</span></button>
+                <button id="addcontact" onClick={() => this.openAddChatPopup()}>
+                    <i className="fa fa-user-plus fa-fw" aria-hidden="true"></i> 
+                    <span>Add chat</span>
+                </button>
                 <button id="settings"><i className="fa fa-cog fa-fw" aria-hidden="true"></i> <span>Settings</span></button>
             </div>
             </div>
@@ -159,18 +172,21 @@ class Sidepanel extends React.Component {
 
 const mapStateToProps = state => {
     return {
-        isAuthenticated: state.token !== null,
-        loading: state.loading,
-        token: state.token,
-        username: state.username 
+        isAuthenticated: state.auth.token !== null,
+        loading: state.auth.loading,
+        token: state.auth.token,
+        username: state.auth.username,
+        chats: state.message.chats
     }
 }
 
 const mapDispatchToProps = dispatch => {
     return {
-        login: (userName, password) => dispatch(actions.authLogin(userName, password)),
-        logout: () => dispatch(actions.logout()),
-        signup: (username, email, password1, password2) => dispatch(actions.authSignup(username, email, password1, password2)),
+        login: (userName, password) => dispatch(authActions.authLogin(userName, password)),
+        logout: () => dispatch(authActions.logout()),
+        signup: (username, email, password1, password2) => dispatch(authActions.authSignup(username, email, password1, password2)),
+        addChat: () => dispatch(navActions.openAddChatPopup()),
+        getUserChats: (username, token) => dispatch(messageActions.getUserChats(username, token))
     }
 }
 

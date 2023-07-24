@@ -3,11 +3,11 @@ import WebSocketInstance from "../websocket";
 import Hoc from "../hoc/hoc";
 import { connect } from 'react-redux';
 import { useParams } from "react-router";
+import Profile from "./Profile";
 
 function Chat(props) {
 
     const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState([]);
     const messageEl = useRef(null);
 
     useEffect(() => {
@@ -16,10 +16,9 @@ function Chat(props) {
     });
 
     let { chatID } = useParams();
-    console.log(messages, "messages")
 	const initialiseChat = () => {
         waitForSocketConnection(() => {
-          WebSocketInstance.addCallbacks(populateMessages, addMessage)
+        //   WebSocketInstance.addCallbacks(populateMessages, addMessage)
           WebSocketInstance.fetchMessages(
             props.username, 
             chatID
@@ -53,30 +52,17 @@ function Chat(props) {
         }, 100);
     }
 
-    const addMessage = (m) => {
-        console.log(messages, "messages in addmessage")
-
-        setMessages(prevMessages => [...prevMessages, m]);
-    }
-
-    // const addMessage = useCallback((m) => {
+    // const addMessage = (m) => {
     //     console.log(messages, "messages in addmessage")
 
-    //     setMessages([...messages, m])
-    // }, [ props.chatId, messages])
+    //     setMessages(prevMessages => [...prevMessages, m]);
+    // }
 
-    
-    // const populateMessages = useCallback((ml) => {
+    // const populateMessages = (ml) => {
     //     console.log(messages, "messages in populate")
 
     //     setMessages(ml.reverse())
-    // }, [ props.chatId, messages])
-
-    const populateMessages = (ml) => {
-        console.log(messages, "messages in populate")
-
-        setMessages(ml.reverse())
-    }
+    // }
 
     const sendMessageHandler = event => {
         event.preventDefault();
@@ -131,11 +117,12 @@ function Chat(props) {
     return (
         props.username && 
         <Hoc>
+            <Profile chatId={chatID} />
             <div className="messages" ref={messageEl}>
                 <ul id="chat-log">
                     {
-                        messages &&
-                        renderMessages(messages)
+                        props.messages &&
+                        renderMessages(props.messages)
                     }
                 </ul>
             </div>
@@ -162,7 +149,8 @@ function Chat(props) {
 
 const mapStateToProps = state => {
     return {
-        username: state.username
+        username: state.auth.username,
+        messages: state.message.messages,
     }
 }
 

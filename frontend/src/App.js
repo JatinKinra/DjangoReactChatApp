@@ -1,17 +1,28 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import * as actions from './store/actions/auth';
-import BaseRouter from './routes';
 import Sidepanel from './containers/Sidepanel';
 import Profile from './containers/Profile';
 import Chat from './containers/Chat';
-import Hoc from './hoc/hoc';
+import AddChatModal from './containers/Popup'; 
+import * as authActions from './store/actions/auth';
+import * as navActions from './store/actions/nav';
+import * as messageActions from './store/actions/messages';
+import WebSocketInstance from './websocket';
+import { message } from 'antd';
 
 class App extends React.Component {
 
     componentDidMount() {
         this.props.onTryAutoSignup();
+    }
+
+    constructor(props) {
+        super(props);
+        WebSocketInstance.addCallbacks(
+            this.props.setMessages.bind(this),
+            this.props.addMessage.bind(this)
+            )
     }
 
     render() {
@@ -20,7 +31,10 @@ class App extends React.Component {
                 <div id="frame">
                     <Sidepanel />
                     <div className="content">
-                        <Profile />
+                        <AddChatModal 
+                            isVisible = {this.props.showAddChatPopup}
+                            close = {() => this.props.closeAddChatPopup()}
+                        />
                         <Routes>
                             <Route path="/:chatID" exact element={<Chat />} />
                         </Routes>                      
@@ -31,10 +45,20 @@ class App extends React.Component {
     };
 }
 
-const mapDispatchToProps = dispatch => {
+const mapStateToProps = state => {
     return {
-        onTryAutoSignup: () => dispatch(actions.authCheckState())
+        showAddChatPopup: state.nav.showAddChatPopup,
+        authenticated: state.auth.token
     }
 }
 
-export default connect(null, mapDispatchToProps)(App);
+const mapDispatchToProps = dispatch => {
+    return {
+        onTryAutoSignup: () => dispatch(authActions.authCheckState()),
+        closeAddChatPopup: () => dispatch(navActions.closeAddChatPopup()),
+        addMessage: message => dispatch(messageActions.addMessage(message)),
+        setMessages: messages => dispatch(messageActions.setMessages(messages)),
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(App);
