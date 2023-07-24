@@ -1,5 +1,5 @@
 import { Button, Form, Input, Select } from 'antd';
-import React, { useState } from 'react'; 
+import React, { useState, useEffect } from 'react'; 
 import axios from 'axios';
 import { withRouter } from '../hoc/withRouter';
 import * as navActions from '../store/actions/nav';
@@ -9,30 +9,34 @@ import { connect } from 'react-redux';
 
 function AddChatForm(props) {
   const [contact, setContact] = useState('');
-  const [options, setOptions] = useState([{value: 'palak', label: 'palak'}]);
+  // var options = [];
+
+  // const getContacts = () => {
+  //   axios.defaults.headers = {
+  //     "Content-Type": "application/json",
+  //     Authorization: `Token ${props.token}`
+  //   };
+  //   axios
+  //     .get(`http://127.0.0.1:8000/chat/contact/?username=${props.username}`)
+  //     .then(res => {
+  //       var list = [];
+  //       res.data.forEach(function (val, index) {
+  //         console.log(val, index);
+  //         list.push(
+  //           {
+  //             value: val,
+  //             label: val,
+  //           }
+  //         )
+  //       });
+  //       options = list;
+  //       return list;
+  //     });
+  // }
   
-  const getContacts = () => {
-    axios.defaults.headers = {
-      "Content-Type": "application/json",
-      Authorization: `Token ${props.token}`
-    };
-    axios
-      .get(`http://127.0.0.1:8000/chat/contact/?username=${props.username}`)
-      .then(res => {
-        var list = [];
-        res.data.forEach(function (val, index) {
-          console.log(val, index);
-          list.push(
-            {
-              value: val,
-              label: val,
-            }
-          )
-        });
-        return list;
-      });
-  } 
-  
+  // useEffect(() => {
+  //   getContacts();
+  // });
 
   const onFinish = (values) => {
     const participants = [contact, props.username]
@@ -106,7 +110,7 @@ function AddChatForm(props) {
             filterOption={(input, option) =>
             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
             }
-            options={getContacts()}
+            options={props.contacts}
         />
     </Form.Item>
 
@@ -128,7 +132,8 @@ function AddChatForm(props) {
 const mapStateToProps = state => {
   return {
     token: state.auth.token,
-    username: state.auth.username
+    username: state.auth.username,
+    contacts: state.message.contacts
   };
 };
 

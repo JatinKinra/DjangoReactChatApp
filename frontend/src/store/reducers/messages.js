@@ -24,6 +24,12 @@ const setChats = (state, action) => {
   });
 };
 
+const setContacts = (state, action) => {
+  return updateObject(state, {
+    contacts: action.contacts
+  });
+};
+
 const reducer = (state = initialState, action) => {
   switch (action.type) {
     case actionTypes.ADD_MESSAGE:
@@ -32,6 +38,8 @@ const reducer = (state = initialState, action) => {
       return setMessages(state, action);
     case actionTypes.GET_CHATS_SUCCESS:
       return setChats(state, action);
+    case actionTypes.GET_CONTACTS_SUCCESS:
+      return setContacts(state, action);
     default:
       return state;
   }
