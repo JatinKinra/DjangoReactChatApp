@@ -6,8 +6,11 @@ import * as messageActions from '../store/actions/messages';
 
 const AddChatModal = (props) => {
   console.log("modal renedering")
-  props.getUserContacts(props.username, props.token);
-
+  if (props.token !== null && props.token !== undefined)
+  {
+    props.getUserContacts(props.username, props.token);
+  }
+  
   return (
     
       <Modal
